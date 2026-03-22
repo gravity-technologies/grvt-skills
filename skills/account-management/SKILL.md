@@ -27,12 +27,6 @@ export GRVT_TRADING_ACCOUNT_ID="<trading account ID>"
 export GRVT_PRIVATE_KEY="<private key for order signing>"
 ```
 
-## How to Execute
-
-IMPORTANT: Always write Python code to a `.py` file and run it with `python3 <file>.py`.
-Never use inline Python (`python3 -c` or `python3 << 'EOF'`) — f-strings with braces trigger
-shell obfuscation warnings in many AI coding tools and require manual confirmation.
-
 ## SDK Setup
 
 ```python
