@@ -192,6 +192,91 @@ Key fields in the response:
 - `legs[0].limit_price` — Limit price
 - `legs[0].is_buying_asset` — `true` for buy, `false` for sell
 
+## Position Config (Margin Type & Leverage)
+
+The SDK does not natively support `set_position_config`. Use this helper to switch
+between CROSS and ISOLATED margin, and to set leverage per instrument.
+
+```python
+import time, random
+from pysdk.grvt_ccxt_utils import get_EIP712_domain_data
+from eth_account import Account
+from eth_account.messages import encode_typed_data
+
+def set_position_config(api, instrument, margin_type, leverage, private_key):
+    """Set margin type and leverage for a perpetual instrument.
+
+    Args:
+        api: GrvtCcxt instance (authenticated)
+        instrument: e.g. "BTC_USDT_Perp"
+        margin_type: "ISOLATED" or "CROSS"
+        leverage: integer 1-50
+        private_key: hex private key string
+    """
+    MARGIN_TYPE_MAP = {"ISOLATED": 1, "CROSS": 2}
+    LEVERAGE_MULTIPLIER = 1_000_000
+
+    market = api.fetch_market(instrument)
+    instrument_hash = market["instrument_hash"]
+    sub_account_id = int(api._trading_account_id)
+    expiration_ns = int((time.time() + 86400) * 1_000_000_000)
+    nonce = random.randint(1, 2**32 - 1)
+
+    domain_data = get_EIP712_domain_data(api.env)
+    types = {
+        "SetSubAccountPositionMarginConfig": [
+            {"name": "subAccountID", "type": "uint64"},
+            {"name": "asset", "type": "uint256"},
+            {"name": "marginType", "type": "uint8"},
+            {"name": "leverage", "type": "int32"},
+            {"name": "nonce", "type": "uint32"},
+            {"name": "expiration", "type": "int64"},
+        ]
+    }
+    message_data = {
+        "subAccountID": sub_account_id,
+        "asset": instrument_hash,
+        "marginType": MARGIN_TYPE_MAP[margin_type],
+        "leverage": leverage * LEVERAGE_MULTIPLIER,
+        "nonce": nonce,
+        "expiration": expiration_ns,
+    }
+
+    message = encode_typed_data(domain_data, types, message_data)
+    signed = Account.sign_message(message, private_key)
+    signer = Account.from_key(private_key)
+
+    payload = {
+        "sub_account_id": str(sub_account_id),
+        "instrument": instrument,
+        "margin_type": margin_type,
+        "leverage": str(leverage),
+        "signature": {
+            "signer": signer.address,
+            "r": hex(signed.r),
+            "s": hex(signed.s),
+            "v": signed.v,
+            "expiration": str(expiration_ns),
+            "nonce": nonce,
+        },
+    }
+
+    env_name = api.env.value  # "testnet" or "prod"
+    base = "trades.testnet.grvt.io" if "testnet" in env_name else "trades.grvt.io"
+    url = f"https://{base}/full/v1/set_position_config"
+    return api._auth_and_post(url, payload)
+
+
+# Usage:
+# set_position_config(api, "BTC_USDT_Perp", "ISOLATED", 20, os.getenv("GRVT_PRIVATE_KEY"))
+# set_position_config(api, "BTC_USDT_Perp", "CROSS", 10, os.getenv("GRVT_PRIVATE_KEY"))
+```
+
+**Constraints:**
+- Leverage must be a whole number between 1 and 50
+- Cannot change margin type while you have an open position for that instrument
+- Close the position first, then switch margin type
+
 ## Important Notes
 
 - All orders on perpetuals require EIP-712 signing — the SDK handles this automatically using `GRVT_PRIVATE_KEY`

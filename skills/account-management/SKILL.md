@@ -79,10 +79,11 @@ positions = api.fetch_positions()
 positions = api.fetch_positions(symbols=["BTC_USDT_Perp", "ETH_USDT_Perp"])
 
 for pos in positions:
-    print(f"{pos['instrument']}: size={pos['size']} side={'long' if pos['is_buying_asset'] else 'short'}")
+    side = "long" if float(pos["size"]) > 0 else "short"
+    print(f"{pos['instrument']}: size={pos['size']} side={side}")
     print(f"  Entry: {pos['entry_price']}, Mark: {pos['mark_price']}")
-    print(f"  Unrealized PnL: {pos['unrealized_pnl']}")
-    print(f"  Margin: {pos['initial_margin']}")
+    print(f"  Unrealized PnL: {pos['unrealized_pnl']}, ROI: {pos['roi']}%")
+    print(f"  Leverage: {pos['leverage']}x, Margin: {pos['margin_type']}")
 ```
 
 ## Position Margin Management
@@ -140,7 +141,7 @@ def portfolio_overview(api):
     for pos in positions:
         pnl = float(pos.get("unrealized_pnl", 0))
         total_pnl += pnl
-        side = "long" if pos.get("is_buying_asset") else "short"
+        side = "long" if float(pos["size"]) > 0 else "short"
         print(f"  {pos['instrument']}: {pos['size']} ({side})")
         print(f"    Entry: {pos['entry_price']} | PnL: {pnl}")
     print(f"\nTotal Unrealized PnL: {total_pnl}")
