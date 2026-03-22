@@ -49,8 +49,14 @@ api = GrvtCcxt(
 ```python
 # Get account balance
 balance = api.fetch_balance()
-# Returns dict with currency balances: free, used, total
-print(f"USDT: free={balance['USDT']['free']}, used={balance['USDT']['used']}, total={balance['USDT']['total']}")
+# Top-level keys: info, timestamp, datetime, total, free, used, USDT
+print(f"USDT Total: {balance['total']['USDT']}")
+print(f"USDT Free:  {balance['free']['USDT']}")
+print(f"USDT Used:  {balance['used']['USDT']}")
+
+# Detailed info per currency in balance["info"]
+for entry in balance["info"]:
+    print(f"{entry['currency']}: balance={entry['balance']}, unrealized_pnl={entry['unrealized_pnl']}")
 ```
 
 ## Account Summary
@@ -73,10 +79,10 @@ positions = api.fetch_positions()
 positions = api.fetch_positions(symbols=["BTC_USDT_Perp", "ETH_USDT_Perp"])
 
 for pos in positions:
-    print(f"{pos['symbol']}: size={pos['contracts']} side={pos['side']}")
-    print(f"  Entry: {pos['entryPrice']}, Mark: {pos['markPrice']}")
-    print(f"  Unrealized PnL: {pos['unrealizedPnl']}")
-    print(f"  Margin: {pos['initialMargin']}")
+    print(f"{pos['instrument']}: size={pos['size']} side={'long' if pos['is_buying_asset'] else 'short'}")
+    print(f"  Entry: {pos['entry_price']}, Mark: {pos['mark_price']}")
+    print(f"  Unrealized PnL: {pos['unrealized_pnl']}")
+    print(f"  Margin: {pos['initial_margin']}")
 ```
 
 ## Position Margin Management
@@ -98,8 +104,8 @@ limits = api.get_position_margin_limits(symbol="BTC_USDT_Perp")
 # Recent fills
 fills = api.fetch_my_trades(symbol="BTC_USDT_Perp", limit=50)
 for fill in fills:
-    print(f"{fill['side']} {fill['amount']} @ {fill['price']} — {fill['datetime']}")
-    print(f"  Fee: {fill['fee']['cost']} {fill['fee']['currency']}")
+    side = "buy" if fill.get("is_taker_buyer") else "sell"
+    print(f"{side} {fill['size']} @ {fill['price']} — trade_id: {fill['trade_id']}")
 ```
 
 ## Funding Payment History
@@ -127,15 +133,16 @@ def portfolio_overview(api):
     balance = api.fetch_balance()
     positions = api.fetch_positions()
 
-    print(f"Account Balance: {balance['USDT']['total']} USDT")
-    print(f"Available: {balance['USDT']['free']} USDT")
+    print(f"Account Balance: {balance['total']['USDT']} USDT")
+    print(f"Available: {balance['free']['USDT']} USDT")
     print(f"\nOpen Positions ({len(positions)}):")
     total_pnl = 0
     for pos in positions:
-        pnl = float(pos.get("unrealizedPnl", 0))
+        pnl = float(pos.get("unrealized_pnl", 0))
         total_pnl += pnl
-        print(f"  {pos['symbol']}: {pos['contracts']} ({pos['side']})")
-        print(f"    Entry: {pos['entryPrice']} | PnL: {pnl}")
+        side = "long" if pos.get("is_buying_asset") else "short"
+        print(f"  {pos['instrument']}: {pos['size']} ({side})")
+        print(f"    Entry: {pos['entry_price']} | PnL: {pnl}")
     print(f"\nTotal Unrealized PnL: {total_pnl}")
 ```
 

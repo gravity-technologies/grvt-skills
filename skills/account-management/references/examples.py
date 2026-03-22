@@ -28,18 +28,23 @@ def portfolio_overview(api: GrvtCcxt):
     positions = api.fetch_positions()
 
     print("=== Portfolio Overview ===")
-    print(f"USDT Balance: {balance['USDT']['total']}")
-    print(f"  Available: {balance['USDT']['free']}")
-    print(f"  In Use:    {balance['USDT']['used']}")
+    print(f"USDT Balance: {balance['total']['USDT']}")
+    print(f"  Available: {balance['free']['USDT']}")
+    print(f"  In Use:    {balance['used']['USDT']}")
+
+    # Detailed info from balance["info"]
+    for entry in balance["info"]:
+        print(f"  {entry['currency']}: unrealized_pnl={entry['unrealized_pnl']}")
 
     print(f"\nOpen Positions ({len(positions)}):")
     total_pnl = 0
     for pos in positions:
-        pnl = float(pos.get("unrealizedPnl", 0))
+        pnl = float(pos.get("unrealized_pnl", 0))
         total_pnl += pnl
-        print(f"  {pos['symbol']}: {pos['contracts']} ({pos['side']})")
-        print(f"    Entry: {pos['entryPrice']} | Mark: {pos['markPrice']} | PnL: {pnl:.2f}")
-        print(f"    Margin: {pos['initialMargin']}")
+        side = "long" if pos.get("is_buying_asset") else "short"
+        print(f"  {pos['instrument']}: {pos['size']} ({side})")
+        print(f"    Entry: {pos['entry_price']} | Mark: {pos['mark_price']} | PnL: {pnl:.2f}")
+        print(f"    Margin: {pos['initial_margin']}")
 
     print(f"\nTotal Unrealized PnL: {total_pnl:.2f} USDT")
 
@@ -47,9 +52,9 @@ def portfolio_overview(api: GrvtCcxt):
 def check_balance(api: GrvtCcxt):
     """Check account balance."""
     balance = api.fetch_balance()
-    for currency, info in balance.items():
-        if isinstance(info, dict) and float(info.get("total", 0)) > 0:
-            print(f"  {currency}: {info['total']} (free: {info['free']})")
+    print(f"Total:     {balance['total']['USDT']} USDT")
+    print(f"Available: {balance['free']['USDT']} USDT")
+    print(f"In Use:    {balance['used']['USDT']} USDT")
     return balance
 
 
@@ -59,8 +64,9 @@ def check_positions(api: GrvtCcxt, symbols: list[str] | None = None):
     if not positions:
         print("No open positions")
     for pos in positions:
-        print(f"  {pos['symbol']}: {pos['contracts']} ({pos['side']})")
-        print(f"    Entry: {pos['entryPrice']}, Unrealized PnL: {pos['unrealizedPnl']}")
+        side = "long" if pos.get("is_buying_asset") else "short"
+        print(f"  {pos['instrument']}: {pos['size']} ({side})")
+        print(f"    Entry: {pos['entry_price']}, PnL: {pos['unrealized_pnl']}")
     return positions
 
 
@@ -68,8 +74,8 @@ def recent_trades(api: GrvtCcxt, symbol: str = "BTC_USDT_Perp", limit: int = 20)
     """Show recent fills/trades for a symbol."""
     fills = api.fetch_my_trades(symbol=symbol, limit=limit)
     for f in fills:
-        print(f"  {f['datetime']}: {f['side']} {f['amount']} @ {f['price']}")
-        print(f"    Fee: {f['fee']['cost']} {f['fee']['currency']}")
+        side = "buy" if f.get("is_taker_buyer") else "sell"
+        print(f"  {side} {f['size']} @ {f['price']} — trade_id: {f['trade_id']}")
     return fills
 
 

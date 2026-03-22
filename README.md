@@ -5,15 +5,15 @@ AI agent skills for trading on [GRVT](https://grvt.io) — a high-performance de
 ## Installation
 
 ```bash
-npx skills add grvt/grvt-skills
+npx skills add gravity-technologies/grvt-skills
 ```
 
 Or install individual skills:
 
 ```bash
-npx skills add grvt/grvt-skills/skills/perpetual-trading
-npx skills add grvt/grvt-skills/skills/market-data
-npx skills add grvt/grvt-skills/skills/account-management
+npx skills add gravity-technologies/grvt-skills/skills/perpetual-trading
+npx skills add gravity-technologies/grvt-skills/skills/market-data
+npx skills add gravity-technologies/grvt-skills/skills/account-management
 ```
 
 Works with Claude Code, Cursor, Codex, GitHub Copilot, Windsurf, Gemini CLI, and any agent supporting the [open skills ecosystem](https://github.com/vercel-labs/skills).

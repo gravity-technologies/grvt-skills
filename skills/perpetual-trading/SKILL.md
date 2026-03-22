@@ -54,8 +54,10 @@ Examples: `BTC_USDT_Perp`, `ETH_USDT_Perp`, `SOL_USDT_Perp`
 
 To discover available perpetuals:
 ```python
-markets = api.fetch_markets()
-perps = [m for m in markets if m["symbol"].endswith("_Perp")]
+markets = api.fetch_all_markets()
+perps = [m for m in markets if m["kind"] == "PERPETUAL"]
+for p in perps:
+    print(p["instrument"])  # e.g. "BTC_USDT_Perp"
 ```
 
 ## Placing Orders
@@ -145,11 +147,11 @@ order = api.create_order(
 ## Cancelling Orders
 
 ```python
-# Cancel a specific order
-api.cancel_order(id=order["order_id"])
+# Cancel by client_order_id (preferred — works immediately after create_order)
+api.cancel_order(id=None, params={"client_order_id": "4224496967"})
 
-# Cancel by client order ID
-api.cancel_order(id=None, params={"client_order_id": 12345})
+# Cancel by order_id (get from fetch_open_orders first)
+api.cancel_order(id="0x01010105033f70be000000000515217b")
 
 # Cancel all open orders
 api.cancel_all_orders()
@@ -176,14 +178,19 @@ fills = api.fetch_my_trades(symbol="BTC_USDT_Perp", limit=50)
 
 ## Order Response
 
-A successful order returns a dict with these key fields:
-- `order_id` — Exchange-assigned order ID
-- `client_order_id` — Your custom ID (if provided)
-- `status` — `PENDING`, `OPEN`, `FILLED`, `REJECTED`, `CANCELLED`
-- `filled` — Amount filled so far
-- `remaining` — Amount still open
-- `price` — Order price
-- `side` — `buy` or `sell`
+`create_order` returns the order payload. Note: `order_id` in the create response is a placeholder (`0x00`).
+To get the real order ID, use `fetch_open_orders` or track by `client_order_id`.
+
+Key fields in the response:
+- `order_id` — Exchange-assigned order ID (use from `fetch_open_orders`, not `create_order`)
+- `metadata.client_order_id` — Your custom ID (auto-generated if not provided)
+- `sub_account_id` — Trading account
+- `is_market` — Whether it's a market order
+- `time_in_force` — `GOOD_TILL_TIME`, `IMMEDIATE_OR_CANCEL`, `FILL_OR_KILL`, `ALL_OR_NONE`
+- `legs[0].instrument` — Symbol (e.g. `BTC_USDT_Perp`)
+- `legs[0].size` — Order size
+- `legs[0].limit_price` — Limit price
+- `legs[0].is_buying_asset` — `true` for buy, `false` for sell
 
 ## Important Notes
 
@@ -191,4 +198,6 @@ A successful order returns a dict with these key fields:
 - The SDK auto-manages authentication sessions and refreshes cookies before expiry
 - Use `GrvtEnv.TESTNET` for testing before moving to `GrvtEnv.PRODUCTION`
 - Prices use 9 decimal precision internally; the SDK handles conversion
+- Minimum notional is 100 USDT — ensure price * amount >= 100
+- `create_order` returns `order_id: "0x00"` — use `metadata.client_order_id` to track/cancel
 - Always confirm the user wants to proceed before placing real orders on production
