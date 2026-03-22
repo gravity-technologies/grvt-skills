@@ -41,10 +41,10 @@ def portfolio_overview(api: GrvtCcxt):
     for pos in positions:
         pnl = float(pos.get("unrealized_pnl", 0))
         total_pnl += pnl
-        side = "long" if pos.get("is_buying_asset") else "short"
+        side = "long" if float(pos["size"]) > 0 else "short"
         print(f"  {pos['instrument']}: {pos['size']} ({side})")
         print(f"    Entry: {pos['entry_price']} | Mark: {pos['mark_price']} | PnL: {pnl:.2f}")
-        print(f"    Margin: {pos['initial_margin']}")
+        print(f"    Leverage: {pos['leverage']}x | Margin: {pos['margin_type']}")
 
     print(f"\nTotal Unrealized PnL: {total_pnl:.2f} USDT")
 
@@ -64,7 +64,7 @@ def check_positions(api: GrvtCcxt, symbols: list[str] | None = None):
     if not positions:
         print("No open positions")
     for pos in positions:
-        side = "long" if pos.get("is_buying_asset") else "short"
+        side = "long" if float(pos["size"]) > 0 else "short"
         print(f"  {pos['instrument']}: {pos['size']} ({side})")
         print(f"    Entry: {pos['entry_price']}, PnL: {pos['unrealized_pnl']}")
     return positions
