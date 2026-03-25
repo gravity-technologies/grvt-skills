@@ -20,28 +20,63 @@ Use this skill when the user wants to:
 pip install grvt-pysdk
 ```
 
-The user must set these environment variables:
+GRVT has two types of API keys. Set the environment variables for the ones you need:
+
 ```bash
-export GRVT_API_KEY="<from GRVT exchange UI>"
-export GRVT_TRADING_ACCOUNT_ID="<trading account ID>"
-export GRVT_PRIVATE_KEY="<private key for order signing>"
+# Required for this skill — Trading API Key credentials
+export GRVT_TRADING_API_KEY="<Trading API Key from GRVT exchange UI>"
+export GRVT_TRADING_PRIVATE_KEY="<private key associated with Trading API Key>"
+
+# Optional — Funding API Key credentials (for funding account transfers)
+export GRVT_FUNDING_API_KEY="<Funding API Key from GRVT exchange UI>"
+export GRVT_FUNDING_PRIVATE_KEY="<private key associated with Funding API Key>"
+
+export GRVT_ENV="testnet"  # or "prod"
 ```
 
-If the user hasn't configured these, guide them to create an API key at https://exchange.grvt.io (production) or https://exchange.testnet.grvt.io (testnet).
+Both key types can be created at:
+- Production: https://exchange.grvt.io/exchange/account/api-keys
+- Testnet: https://exchange.testnet.grvt.io/exchange/account/api-keys
+
+**This skill uses `GRVT_TRADING_API_KEY` and `GRVT_TRADING_PRIVATE_KEY`.**
 
 ## SDK Setup
 
+Login to auto-detect `trading_account_id` and `funding_account_address`:
+
 ```python
 import os
+import requests
+from pathlib import Path
 from pysdk.grvt_ccxt import GrvtCcxt
 from pysdk.grvt_ccxt_env import GrvtEnv
 
+# Load .env file if present
+env_file = Path(".env")
+if env_file.exists():
+    for line in env_file.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, _, value = line.partition("=")
+            os.environ.setdefault(key.strip(), value.strip())
+
+env = os.getenv("GRVT_ENV", "testnet")
+base = "edge.testnet.grvt.io" if env == "testnet" else "edge.grvt.io"
+
+# Login returns: sub_account_id, funding_account_address
+login_resp = requests.post(
+    f"https://{base}/auth/api_key/login",
+    json={"api_key": os.getenv("GRVT_TRADING_API_KEY")},
+).json()
+trading_account_id = login_resp["sub_account_id"]
+funding_account_address = login_resp["funding_account_address"]
+
 api = GrvtCcxt(
-    env=GrvtEnv.TESTNET,  # Use GrvtEnv.PRODUCTION for real trading
+    env=GrvtEnv.TESTNET if env == "testnet" else GrvtEnv.PRODUCTION,
     parameters={
-        "api_key": os.getenv("GRVT_API_KEY"),
-        "trading_account_id": os.getenv("GRVT_TRADING_ACCOUNT_ID"),
-        "private_key": os.getenv("GRVT_PRIVATE_KEY"),
+        "api_key": os.getenv("GRVT_TRADING_API_KEY"),
+        "trading_account_id": trading_account_id,
+        "private_key": os.getenv("GRVT_TRADING_PRIVATE_KEY"),
     },
 )
 ```
