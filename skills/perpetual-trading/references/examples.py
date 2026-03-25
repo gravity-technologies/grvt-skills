@@ -68,34 +68,38 @@ def place_post_only_order(api: GrvtCcxt):
     return order
 
 
-def place_stop_loss(api: GrvtCcxt, trigger_price: float):
-    """Place a stop-loss market order to protect a long position."""
+def place_stop_loss(api: GrvtCcxt, price: float, amount: float = 0.01):
+    """Place a reduce-only limit sell as stop-loss for a long position.
+
+    Note: SDK only supports 'limit' and 'market' order types.
+    This is a limit order, not a true trigger order — it sits on the orderbook.
+    For a long position, a sell below market will fill immediately like a market order.
+    """
     order = api.create_order(
         symbol="BTC_USDT_Perp",
-        order_type="stop_market",
+        order_type="limit",
         side="sell",
-        amount=0.01,
-        price=0,
-        params={
-            "trigger_price": trigger_price,
-            "reduce_only": True,
-        },
+        amount=amount,
+        price=price,
+        params={"reduce_only": True},
     )
     return order
 
 
-def place_take_profit(api: GrvtCcxt, trigger_price: float):
-    """Place a take-profit market order to lock in gains on a long position."""
+def place_take_profit(api: GrvtCcxt, price: float, amount: float = 0.01):
+    """Place a reduce-only limit sell as take-profit for a long position.
+
+    Note: SDK only supports 'limit' and 'market' order types.
+    This is a limit order, not a true trigger order — it sits on the orderbook.
+    For a long position, a sell above market will wait until price reaches the level.
+    """
     order = api.create_order(
         symbol="BTC_USDT_Perp",
-        order_type="take_profit_market",
+        order_type="limit",
         side="sell",
-        amount=0.01,
-        price=0,
-        params={
-            "trigger_price": trigger_price,
-            "reduce_only": True,
-        },
+        amount=amount,
+        price=price,
+        params={"reduce_only": True},
     )
     return order
 

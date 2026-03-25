@@ -149,35 +149,34 @@ order = api.create_order(
 
 ### Take-Profit / Stop-Loss Orders
 
-Use trigger orders for TP/SL:
+**The SDK only supports `limit` and `market` order types.** It does NOT support trigger/TP/SL order types like `stop_market` or `take_profit_market`.
+
+To simulate TP/SL, place limit orders at the desired price with `reduce_only`:
 
 ```python
-# Stop-loss: sell when mark price drops to 88000
-order = api.create_order(
+# Stop-loss: place a limit sell at 88000 (reduce-only)
+sl_order = api.create_order(
     symbol="BTC_USDT_Perp",
-    order_type="stop_market",
+    order_type="limit",
     side="sell",
     amount=0.01,
-    price=0,
-    params={
-        "trigger_price": 88000,
-        "reduce_only": True,
-    },
+    price=88000,
+    params={"reduce_only": True},
 )
 
-# Take-profit: sell when mark price reaches 95000
-order = api.create_order(
+# Take-profit: place a limit sell at 95000 (reduce-only)
+tp_order = api.create_order(
     symbol="BTC_USDT_Perp",
-    order_type="take_profit_market",
+    order_type="limit",
     side="sell",
     amount=0.01,
-    price=0,
-    params={
-        "trigger_price": 95000,
-        "reduce_only": True,
-    },
+    price=95000,
+    params={"reduce_only": True},
 )
 ```
+
+**Note:** These are regular limit orders, not true trigger orders. They sit on the orderbook immediately.
+For a long position, a TP limit sell above market will wait to fill. A SL limit sell below market will fill immediately as a market-like order — use with caution.
 
 ## Cancelling Orders
 
