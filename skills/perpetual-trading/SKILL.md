@@ -147,36 +147,75 @@ order = api.create_order(
 - `FOK` — Fill or Kill (all or nothing)
 - `AON` — All or None
 
-### Take-Profit / Stop-Loss Orders
+### Take-Profit / Stop-Loss (Trigger Orders)
 
-**The SDK only supports `limit` and `market` order types.** It does NOT support trigger/TP/SL order types like `stop_market` or `take_profit_market`.
-
-To simulate TP/SL, place limit orders at the desired price with `reduce_only`:
+The SDK's `create_order` does not support trigger orders natively. Use this helper
+to place real TP/SL trigger orders that only activate when the trigger price is reached:
 
 ```python
-# Stop-loss: place a limit sell at 88000 (reduce-only)
-sl_order = api.create_order(
-    symbol="BTC_USDT_Perp",
-    order_type="limit",
-    side="sell",
-    amount=0.01,
-    price=88000,
-    params={"reduce_only": True},
+from pysdk.grvt_ccxt_utils import get_grvt_order, get_order_payload
+from pysdk.grvt_ccxt_env import get_grvt_endpoint
+
+def create_trigger_order(api, symbol, side, amount, limit_price, trigger_type, trigger_price, trigger_by="MARK", reduce_only=True, private_key=None):
+    """Place a trigger order (TP/SL).
+
+    Args:
+        api: GrvtCcxt instance
+        symbol: e.g. "BTC_USDT_Perp"
+        side: "buy" or "sell"
+        amount: order size
+        limit_price: execution price after trigger
+        trigger_type: "TAKE_PROFIT" or "STOP_LOSS"
+        trigger_price: price that activates the order
+        trigger_by: "MARK" (default), "INDEX", "LAST", or "MID"
+        reduce_only: True to only reduce position (default)
+        private_key: hex private key string
+    """
+    order = get_grvt_order(
+        sub_account_id=api.get_trading_account_id(),
+        symbol=symbol,
+        order_type="limit",
+        side=side,
+        amount=amount,
+        limit_price=limit_price,
+        order_duration_secs=24 * 60 * 60,
+        params={"reduce_only": reduce_only},
+    )
+    payload = get_order_payload(order, private_key=private_key, env=api.env, instruments=api.markets)
+
+    # Inject trigger metadata (unsigned — not part of EIP-712 signature)
+    payload["order"]["metadata"]["trigger"] = {
+        "trigger_type": trigger_type,
+        "tpsl": {
+            "trigger_by": trigger_by,
+            "trigger_price": str(trigger_price),
+            "close_position": False,
+        },
+    }
+
+    path = get_grvt_endpoint(api.env, "CREATE_ORDER")
+    return api._auth_and_post(path, payload)
+
+
+# Example: Long BTC position, set SL at 68000 (trigger) / 67900 (limit)
+result = create_trigger_order(
+    api, "BTC_USDT_Perp", side="sell", amount=0.01,
+    limit_price=67900, trigger_type="STOP_LOSS", trigger_price=68000,
+    private_key=os.getenv("GRVT_TRADING_PRIVATE_KEY"),
 )
 
-# Take-profit: place a limit sell at 95000 (reduce-only)
-tp_order = api.create_order(
-    symbol="BTC_USDT_Perp",
-    order_type="limit",
-    side="sell",
-    amount=0.01,
-    price=95000,
-    params={"reduce_only": True},
+# Example: Long BTC position, set TP at 75000 (trigger) / 74900 (limit)
+result = create_trigger_order(
+    api, "BTC_USDT_Perp", side="sell", amount=0.01,
+    limit_price=74900, trigger_type="TAKE_PROFIT", trigger_price=75000,
+    private_key=os.getenv("GRVT_TRADING_PRIVATE_KEY"),
 )
 ```
 
-**Note:** These are regular limit orders, not true trigger orders. They sit on the orderbook immediately.
-For a long position, a TP limit sell above market will wait to fill. A SL limit sell below market will fill immediately as a market-like order — use with caution.
+**Trigger types:** `TAKE_PROFIT`, `STOP_LOSS`
+**Trigger by:** `MARK` (default), `INDEX`, `LAST`, `MID`
+
+The order stays dormant until the trigger price is reached, then becomes a limit order at `limit_price`.
 
 ## Cancelling Orders
 
