@@ -23,14 +23,31 @@ pip install grvt-pysdk
 
 Market data endpoints are **public** — no API key is needed for read-only data. However, if the user already has credentials configured, reuse their existing `GrvtCcxt` instance.
 
+```bash
+export GRVT_ENV="testnet"  # or "prod"
+```
+
 ## SDK Setup
 
 ```python
+import os
+from pathlib import Path
 from pysdk.grvt_ccxt import GrvtCcxt
 from pysdk.grvt_ccxt_env import GrvtEnv
 
+# Load .env file if present
+env_file = Path(".env")
+if env_file.exists():
+    for line in env_file.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, _, value = line.partition("=")
+            os.environ.setdefault(key.strip(), value.strip())
+
+env = os.getenv("GRVT_ENV", "testnet")
+
 # For public market data only (no credentials needed)
-api = GrvtCcxt(env=GrvtEnv.PRODUCTION)
+api = GrvtCcxt(env=GrvtEnv.TESTNET if env == "testnet" else GrvtEnv.PRODUCTION)
 
 # Or reuse authenticated instance if available
 ```

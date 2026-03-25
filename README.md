@@ -33,14 +33,41 @@ Works with Claude Code, Cursor, Codex, GitHub Copilot, Windsurf, Gemini CLI, and
    pip install grvt-pysdk
    ```
 
-2. Set environment variables:
+2. Set credentials via `.env` file (recommended) or environment variables:
+
+   Create a `.env` file in your project root:
    ```bash
-   export GRVT_API_KEY="<from GRVT exchange UI>"
-   export GRVT_TRADING_ACCOUNT_ID="<your trading account ID>"
-   export GRVT_PRIVATE_KEY="<your private key>"
+   # Trading API Key — for orders, positions, trading account operations
+   GRVT_TRADING_API_KEY=<your Trading API Key>
+   GRVT_TRADING_PRIVATE_KEY=<private key for Trading API Key>
+
+   # Funding API Key — for funding account transfers (optional)
+   GRVT_FUNDING_API_KEY=<your Funding API Key>
+   GRVT_FUNDING_PRIVATE_KEY=<private key for Funding API Key>
+
+   GRVT_ENV=testnet  # or prod
    ```
 
-3. Get your API key at [exchange.grvt.io](https://exchange.grvt.io) (production) or [exchange.testnet.grvt.io](https://exchange.testnet.grvt.io) (testnet).
+   Or export them directly:
+   ```bash
+   export GRVT_TRADING_API_KEY="<your Trading API Key>"
+   export GRVT_TRADING_PRIVATE_KEY="<private key for Trading API Key>"
+   export GRVT_ENV="testnet"
+   ```
+
+3. Get your API keys at:
+   - Production: [exchange.grvt.io/exchange/account/api-keys](https://exchange.grvt.io/exchange/account/api-keys)
+   - Testnet: [exchange.testnet.grvt.io/exchange/account/api-keys](https://exchange.testnet.grvt.io/exchange/account/api-keys)
+
+   Both Trading and Funding API keys are managed on this page. The `trading_account_id` is auto-detected from the login response.
+
+## Recommended: Enable Auto-Run
+
+For the best natural language experience (no code preview prompts), enable auto-run in your AI tool:
+
+- **Claude Code**: `claude --dangerously-skip-permissions`
+- **Cursor**: Settings → Features → Enable "Auto-Run"
+- **Codex**: Use `--full-auto` flag
 
 ## Usage
 
