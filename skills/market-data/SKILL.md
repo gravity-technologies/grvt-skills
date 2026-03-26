@@ -17,9 +17,13 @@ Use this skill when the user wants to:
 
 ## Prerequisites
 
+Before first use, check if `.grvt-setup-done` exists in the project root.
+If it does NOT exist, run the following and then create the file:
 ```bash
 pip install grvt-pysdk
+touch .grvt-setup-done
 ```
+If `.grvt-setup-done` already exists, skip installation.
 
 Market data endpoints are **public** — no API key is needed for read-only data. However, if the user already has credentials configured, reuse their existing `GrvtCcxt` instance.
 
