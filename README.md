@@ -37,10 +37,8 @@ Works with Claude Code, Cursor, Codex, GitHub Copilot, Windsurf, Gemini CLI, and
 ### Not yet covered
 
 - Transfers (trading-to-funding, funding-to-trading, between sub-accounts)
-- Withdrawals (requires 2FA)
+- Withdrawals
 - WebSocket real-time streaming
-- Spot trading
-- Options trading
 
 ## Setup
 
