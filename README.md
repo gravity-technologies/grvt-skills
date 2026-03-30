@@ -25,6 +25,7 @@ Works with Claude Code, Cursor, Codex, GitHub Copilot, Windsurf, Gemini CLI, and
 | **perpetual-trading** | Place, cancel, and manage perpetual futures orders |
 | **market-data** | Fetch prices, orderbooks, candles, funding rates |
 | **account-management** | Check balances, positions, PnL, trade history |
+| **investment** | Invest in and redeem from GRVT vaults |
 
 ## Setup
 
