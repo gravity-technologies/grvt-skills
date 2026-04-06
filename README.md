@@ -27,6 +27,20 @@ Works with Claude Code, Cursor, Codex, GitHub Copilot, Windsurf, Gemini CLI, and
 | **account-management** | Check balances, positions, PnL, trade history |
 | **investment** | Invest in and redeem from GRVT vaults |
 
+### What's covered
+
+- **Orders** — limit, market, cancel (single/all), open orders, order history, fill history
+- **Trigger orders** — native TP/SL with TAKE_PROFIT / STOP_LOSS, triggered by MARK / INDEX / LAST / MID price
+- **Position config** — switch between CROSS and ISOLATED margin, set leverage (1-50x)
+- **Market data** — tickers, orderbook depth (10/50/100/500), recent trades, OHLCV candlesticks (16 timeframes), funding rates, instrument discovery
+- **Account** — balance, open positions with PnL, account summary, funding payment history
+
+### Not yet covered
+
+- Transfers (trading-to-funding, funding-to-trading, between sub-accounts)
+- Withdrawals
+- WebSocket real-time streaming
+
 ## Setup
 
 1. Install the Python SDK:
